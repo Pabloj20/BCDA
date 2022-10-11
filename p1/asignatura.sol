@@ -24,7 +24,17 @@ contract asignatura{
     mapping(address => DatosAlumno) public datosAlumno;
 
     Evaluacion[] public evaluaciones;
+
     address[] public matriculas;
+
+    enum TipoNota {Empty, Np, Normal}
+
+    struct Nota {
+        TipoNota tipo;
+        uint calificacion;
+    }
+
+    mapping(address => mapping(uint => Nota)) public calificaciones;
 
     /*
     Se especifica con memory porque estamos indicando que esos argumentos se guardan en
@@ -55,11 +65,16 @@ contract asignatura{
         return matriculas.length;
     }
 
+    function califica(address alumno, TipoNota tipo, uint _nota, uint evaluacion) soloProfesor public{
+        Nota memory nota = Nota(tipo, _nota);
+        calificaciones[alumno][evaluacion] = nota;
+    }
+
     function creaEvaluacion(string memory _nombre, uint _fecha, uint _porcentaje) soloProfesor public {
         require(bytes(_nombre).length != 0, "El nombre no puede estar vacio");
 
         Evaluacion memory datos = Evaluacion(_nombre, _fecha, _porcentaje);
-        evaluaciones.push(datos);
+        evaluaciones.push(datos);        
     }
 
     /*
@@ -72,6 +87,12 @@ contract asignatura{
 
         _nombre = datos.nombre;
         _email = datos.email;
+    }
+
+    function verNota(uint _calificacion) soloAlumnos public view returns(TipoNota tipo, uint calificacion){
+        Nota memory datos = calificaciones[msg.sender][_calificacion];
+        tipo = datos.tipo;
+        calificacion = datos.calificacion;
     }
 
     modifier soloProfesor(){
