@@ -42,7 +42,7 @@ contract asignatura{
         profesor = msg.sender;
     }
 
-    function automatricula(string memory _nombre, string memory _email) soloAlumnos public{
+    function automatricula(string memory _nombre, string memory _email) soloNoAlumnos public{
         require(bytes(_nombre).length != 0, "El nombre no puede estar vacio");
         require(bytes(_email).length != 0, "El email no puede estar vacio");
 
@@ -57,6 +57,10 @@ contract asignatura{
     }
 
     function califica(address alumno, TipoNota tipo, uint _nota, uint evaluacion) soloProfesor public{
+        require(estaMatriculado(alumno), "Solo se pueden calificar a un alumno matriculado.");
+        require(evaluacion < evaluaciones.length, "No se puede calificar una evaluacion que no existe.");
+        require(_nota <= 1000, "No se puede calificar con una nota superior a la maxima permitida.");
+
         Nota memory nota = Nota(tipo, _nota);
         calificaciones[alumno][evaluacion] = nota;
     }
@@ -76,10 +80,18 @@ contract asignatura{
     }
 
     function verNota(uint _calificacion) soloAlumnos public view returns(TipoNota tipo, uint calificacion){
+        require(_calificacion < evaluaciones.length, "El indice de la evaluacion no existe.");
+
         Nota memory datos = calificaciones[msg.sender][_calificacion];
         tipo = datos.tipo;
         calificacion = datos.calificacion;
     }
+
+    function estaMatriculado(address alumno) private view returns (bool) {
+        string memory _nombre = datosAlumno[alumno].nombre;
+
+        return bytes(_nombre).length != 0;
+    } 
 
     modifier soloProfesor(){
         require(msg.sender == profesor, "Solo el profesor tiene acceso");
@@ -88,6 +100,11 @@ contract asignatura{
 
     modifier soloAlumnos(){
         require(msg.sender != profesor, "Solo los alumnos tienen acceso");
+        _;
+    }
+
+    modifier soloNoAlumnos() {
+        require(!estaMatriculado(msg.sender), "Solo permitido a alumnos no matriculados");
         _;
     }
     
